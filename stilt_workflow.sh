@@ -5,13 +5,8 @@ MEMORY=475
 PROJ=${PWD##*/}
 
 ##rename seq files
-#for f in * ; do mv -- "$f" "${PROJ}_$f" ; done
-#echo "for f in * ; do mv -- "$f" "${PROJ}_$f" ; done"
 #rename libraries to match dDocent
 rename -f -e 's/STILT/STILT_/' -- ./*.f*q.gz
-#rename -f -e 's/_R1_/.F_/' -- ./*.f*q.gz
-#rename -f -e 's/_R2_/.R_/' -- ./*.f*q.gz
-#rename -f -e 's/fastq/fq/' -- ./*.f*q.gz
 rename -f -e 's/\_001//' -- ./*.f*q.gz
 rename -f -e 's/\_L008//' -- ./*.f*q.gz
 
@@ -78,30 +73,7 @@ else
     spades.py "${reads[@]}" -t $NUMPROC -m $MEMORY -o ./assembly/${PROJ}_default_kmer
 fi
 
-#####QUAST#####-----------------------------------------------------------
-# #per KMER
-# for genome in `find ./assembly -maxdepth 1 -name *$PROJ* -type d | cut -d "/" -f3`; do
-#     KMERS=(` find ./assembly/$genome/ -maxdepth 1 -name "K*" | cut -d "/" -f4 | sort | uniq `)
-#     cp ./assembly/${genome}/contigs.fasta ./quast/"${genome}_contigs.fasta"
-#          for KMER in `find ./assembly/$genome/ -maxdepth 1 -name "K*" | cut -d "/" -f4 | sort | uniq`; do
-#              cp ./assembly/${genome}/${KMER}/final_contigs.fasta ./quast/${genome}_${KMER}.fasta
-#         done
-#     by_kmer=("${KMERS[@]/#/./quast/${genome}_}")
-#     by_kmer_files=("${by_kmer[@]/%/.fasta}")
-#     quast.py -e -t $NUMPROC -m $MEMORY ./quast/${genome}_contigs.fasta "${by_kmer_files[@]}" -o ./quast/${genome}_results/
-# done
-
-# #all default KMER selection
-# all_user=(` find ./quast/*usr*contigs.fasta  -type f `)
-# quast.py -e -t $NUMPROC -m $MEMORY  "${all_user[@]}" -o ./quast/usr_spades/
-
-# #spades default settings
-# #all default KMER selection
-
-# all_default=(` find ./quast/*default*contigs.fasta  -type f `)
-# quast.py -e -t $NUMPROC -m $MEMORY "${all_default[@]}" -o ./quast/default_spades/ 
-
-
+#QUAST
 parallel   -j $NUMPROC cp ./assembly/{}/contigs.fasta ./quast/{}_contigs.fasta ::: \
 ` find ./assembly -maxdepth 1 -type d | sort | uniq | cut -d "/" -f3 `
 
@@ -128,12 +100,6 @@ SPLITS=2
 for i in `find ./quast/ -maxdepth 1 -name "*fasta" -type f` ; do
     sed ':a;N;/^>/M!s/\n//;ta;P;D' ${i} | awk '/^>/ { getline seq } length(seq) >50000 { print $0 "\n" seq }' - > ${i/_kmer_contigs.fasta/}_large.fa
 done
-
-#sed ':a;N;/^>/M!s/\n//;ta;P;D'  {THECHOSEN} > {THECHOSEN}_sed_corr.fasta
-#awk '/^>/ { getline seq } length(seq) >20000 { print $0 "\n" seq }' {THECHOSEN}_sed_corr.fasta > {THECHOSEN}_large_contigs.fasta
-
-#grep -A 1 NODE_2_le sed_corr.fasta > NODE_2.fasta
-#grep -A 1 -f desired_nodes.txt sed_corr.fasta > desired_nodes.fasta
 
 cp $THECHOSEN ./mapping/${PROJ}_reference.fasta
 
@@ -213,42 +179,6 @@ bamToBed -i ./variantcalling/merged_pools.bam | bedtools merge -i - > ./variantc
 
 split -n l/$NUMPROC -d --additional-suffix=.bed ./variantcalling/mapped.bed ./variantcalling/mapped.
 
-
-# bedtools coverage -b ./variantcalling/merged_pools.bam -a ./variantcalling/mapped.bed -counts -sorted > ./variantcalling/cov.stats
-
-# DP=$(mawk '{print $4}' ./variantcalling/cov.stats | sort -rn | perl -e '$d=.001;@l=<>;print $l[int($d*@l)]')
-# CC=$( mawk -v x=$DP '$4 < x' ./variantcalling/cov.stats | mawk '{len=$3-$2;lc=len*$4;tl=tl+lc} END {OFMT = "%.0f";print tl/"'$(( $NUMPROC * 2 ))'"}')
-
-# find ./trimming/ -name "*.fq.gz" | cat | parallel -j $NUMPROC "gunzip -c {} | head -2 | tail -1 >> ./variantcalling/lengths.txt"
-# MaxLen=$(mawk '{ print length() | "sort -rn" }' ./variantcalling/lengths.txt | head -1)
-# MaxLen2=$(( $MaxLen / 2 ))
-# ML1=$(( $MaxLen2 + 1 ))
-# MaxCov=$(mawk '{print $4}' ./variantcalling/cov.stats | sort -rn | head -1)
-# MaxCov2=$(( $MaxCov * 8 / 10 ))
-
-# mawk '$4 > $MaxCov2' ./variantcalling/cov.stats > ./variantcalling/cov.high.stats
-# mawk '$4 <= $MaxCov2' ./variantcalling/cov.stats > ./variantcalling/cov.low.stats
-
-# #split high coverage intervals into smaller, 1/2 read-length sized intervals
-
-# bedtools makewindows -b ./variantcalling/cov.high.stats -w $MaxLen2 -s $ML1 > ./variantcalling/temp1.bed
-# bedtools intersect -a ./variantcalling/cov.stats -b ./variantcalling/temp1.bed > ./variantcalling/temp.cov.stats
-
-# cat ./variantcalling/temp.cov.stats ./variantcalling/cov.low.stats > ./variantcalling/cov.split.stats
-# rm ./variantcalling/cov.high.stats ./variantcalling/cov.low.stats ./variantcalling/temp1.bed ./variantcalling/temp.cov.stats
-
-# TT=$(( $MaxLen2 * 1000000 ))
-
-# mawk -v x=$DP '$4 < x' ./variantcalling/cov.split.stats |sort -V -k1,1 -k2,2 | mawk -v cutoff=$CC -v tt=$TT 'BEGIN{i=1}
-# {len=$3-$2;lc=len*$4;cov = cov + lc
-# if (NR == 1 && lc > tt) {x="./variantcalling/mapped."i".bed";print $1"\t"$2"\t"$3 > x; i=i+1; e=1}
-# else if ( cov < cutoff && lc < tt) {x="./variantcalling/mapped."i".bed";print $1"\t"$2"\t"$3 > x; e=0}
-# else if (lc > tt && e > 0 ) {x="./variantcalling/mapped."i".bed"; print $1"\t"$2"\t"$3 > x; cov=0;i=i+1; e=1}
-# else if (lc > tt && e < 1 ) {i=i+1; x="./variantcalling/mapped."i".bed"; print $1"\t"$2"\t"$3 > x; cov=0;i=i+1;e=1}
-# else if (cov > cutoff && lc < tt ) {i=i+1; x="./variantcalling/mapped."i".bed"; print $1"\t"$2"\t"$3 > x; cov=lc;e=0}
-# }'
-
-
 wait
 ####################
 POPS=(` find  ./trimming  -name "*val_1*.f*.gz" | sort | cut -d "/" -f3 | cut -d "_" -f1-2 | sort | uniq `)
@@ -267,21 +197,6 @@ fi
 if [ ! -d "./variantcalling/filtered" ]; then
      mkdir ./variantcalling/filtered
 fi
-
-# VT1="--max-missing 0.9"
-# VT2="--mac 2"
-# VT3="--minQ 20"
-# VT4="--minDP 10"
-# #VT5="--min-meanDP 5"
-# #VT6="--max-meanDP 500" 
-
-# VL1=("MQM > 39 & MQMR > 39")
-# VL2=("MQM / MQMR > 0.75 & MQM / MQMR < 1.25")
-# VL3=("RPR > 0 & RPL > 0")
-# VL4=("QUAL / DP > 0.25")
-# VL5=("PAIRED > 0.05 & PAIREDR > 0.05 & PAIREDR / PAIRED < 1.75 & PAIREDR / PAIRED > 0.25 | PAIRED < 0.05 & PAIREDR < 0.05")
-# VL6=("NS > 1")
-# VL7=("LEN < 11")
 
    call_genos(){
     if [ ! -f "./variantcalling/split.$1.bam" ]
@@ -324,20 +239,12 @@ fi
         --hwe 0.01 \
         --recode --recode-INFO-all \
         --stdout > ./variantcalling/filtered/filtered.$1.vcf
-    #grep -v "#contig" ./variantcalling/raw.$1.vcf > ./variantcalling/raw/raw_fixed.$1.vcf
-    #grep -v "#contig" ./variantcalling/filtered.$1.vcf > ./variantcalling/filtered/filtered_fixed.$1.vcf
     }
 
     export -f call_genos
 
 ulimit -s unlimited
 ls ./variantcalling/mapped.*.bed | sed 's/mapped.//g' | sed 's/.bed//g' | cut -d "/" -f3 | shuf | parallel --env call_genos -j $NUMPROC --no-notice call_genos {} 
-   
-
-
-#mv ./mapping/reference.fasta ./mapping/${PROJ}_reference.fasta
-#mv ./variantcalling/raw*.vcf ./variantcalling/raw/
-#mv ./variantcalling/filtered*.vcf ./variantcalling/filtered/
 
 rename -f -e 's/\d+/sprintf("%02d",$&)/e' -- ./variantcalling/raw/*.vcf
 vcflib vcfcombine ./variantcalling/raw/raw.*.vcf > ./variantcalling/TotalRawSNPs.vcf
@@ -358,32 +265,15 @@ sed 's/\.\/\.\/\./\.\/\./' ./variantcalling/filtered_SNPs.vcf > ./variantcalling
 rm ./variantcalling/filtered_SNPs.vcf; mv ./variantcalling/filtered_SNPs_fix.vcf ./variantcalling/${PROJ}_filtered_SNPs.vcf
 
 rm ./variantcalling/split.*.bam*; rm ./variantcalling/mapped.*.bed
-#vcftools --vcf variantcalling/${PROJ}_TotalRawSNPs.vcf --minDP 5 --thin 100 --recode --recode-INFO-all --out ${PROJ}_filteredSNPs_thin
-#vcftools --vcf variantcalling/${PROJ}_TotalRawSNPs.vcf --minDP 5 --recode --recode-INFO-all --out ${PROJ}_filteredSNPs
-#mv ${PROJ}_filteredSNPs.recode.vcf variantcalling/${PROJ}_filteredSNPs.vcf
 
-
-
-
-#look up {skater} package
 bgzip manu2_filtered_SNPs.vcf
 tabix -p vcf manu2_filtered_SNPs.vcf.gz
 bcftools sort -Ov -m 50G -o manu_sorted.vcf manu2_filtered_SNPs.vcf.gz
-
-bcftools view -H manu_sorted.vcf | cut -f 1 | uniq | awk '{print $0"\t"$0}' > manu.chrom-map.txt
-vcftools --vcf manu_sorted.vcf --plink --chrom-map manu.chrom-map.txt --out manu2ped
 
 
 NUMPROC=40
 MEMORY=250
 PROJ=${PWD##*/}
-
-java -Xmx${MEMORY}g -jar /10tb_leviathan/evan/bin/hap-ibd.jar \
-gt=/10tb_leviathan/evan/manu2/skater/manu_sorted.vcf \
-map=/10tb_leviathan/evan/manu2/skater/manu2ped.map \
-out=manuibd nthreads=$NUMPROC
-
-plink --vcf manu_sorted.vcf --recode A --out sequoia_input
 
 ###############_NCBI_REFERENCE_STACKS_######################
 THECHOSEN=(` find ./assembly/ -maxdepth 2 -name "*.fa*" -type f `)
@@ -454,42 +344,6 @@ bamToBed -i ./variantcalling/merged_pools.bam | bedtools merge -i - > ./variantc
 
 split -n l/$NUMPROC -d --additional-suffix=.bed ./variantcalling/mapped.bed ./variantcalling/mapped.
 
-
-# bedtools coverage -b ./variantcalling/merged_pools.bam -a ./variantcalling/mapped.bed -counts -sorted > ./variantcalling/cov.stats
-
-# DP=$(mawk '{print $4}' ./variantcalling/cov.stats | sort -rn | perl -e '$d=.001;@l=<>;print $l[int($d*@l)]')
-# CC=$( mawk -v x=$DP '$4 < x' ./variantcalling/cov.stats | mawk '{len=$3-$2;lc=len*$4;tl=tl+lc} END {OFMT = "%.0f";print tl/"'$(( $NUMPROC * 2 ))'"}')
-
-# find ./trimming/ -name "*.fq.gz" | cat | parallel -j $NUMPROC "gunzip -c {} | head -2 | tail -1 >> ./variantcalling/lengths.txt"
-# MaxLen=$(mawk '{ print length() | "sort -rn" }' ./variantcalling/lengths.txt | head -1)
-# MaxLen2=$(( $MaxLen / 2 ))
-# ML1=$(( $MaxLen2 + 1 ))
-# MaxCov=$(mawk '{print $4}' ./variantcalling/cov.stats | sort -rn | head -1)
-# MaxCov2=$(( $MaxCov * 8 / 10 ))
-
-# mawk '$4 > $MaxCov2' ./variantcalling/cov.stats > ./variantcalling/cov.high.stats
-# mawk '$4 <= $MaxCov2' ./variantcalling/cov.stats > ./variantcalling/cov.low.stats
-
-# #split high coverage intervals into smaller, 1/2 read-length sized intervals
-
-# bedtools makewindows -b ./variantcalling/cov.high.stats -w $MaxLen2 -s $ML1 > ./variantcalling/temp1.bed
-# bedtools intersect -a ./variantcalling/cov.stats -b ./variantcalling/temp1.bed > ./variantcalling/temp.cov.stats
-
-# cat ./variantcalling/temp.cov.stats ./variantcalling/cov.low.stats > ./variantcalling/cov.split.stats
-# rm ./variantcalling/cov.high.stats ./variantcalling/cov.low.stats ./variantcalling/temp1.bed ./variantcalling/temp.cov.stats
-
-# TT=$(( $MaxLen2 * 1000000 ))
-
-# mawk -v x=$DP '$4 < x' ./variantcalling/cov.split.stats |sort -V -k1,1 -k2,2 | mawk -v cutoff=$CC -v tt=$TT 'BEGIN{i=1}
-# {len=$3-$2;lc=len*$4;cov = cov + lc
-# if (NR == 1 && lc > tt) {x="./variantcalling/mapped."i".bed";print $1"\t"$2"\t"$3 > x; i=i+1; e=1}
-# else if ( cov < cutoff && lc < tt) {x="./variantcalling/mapped."i".bed";print $1"\t"$2"\t"$3 > x; e=0}
-# else if (lc > tt && e > 0 ) {x="./variantcalling/mapped."i".bed"; print $1"\t"$2"\t"$3 > x; cov=0;i=i+1; e=1}
-# else if (lc > tt && e < 1 ) {i=i+1; x="./variantcalling/mapped."i".bed"; print $1"\t"$2"\t"$3 > x; cov=0;i=i+1;e=1}
-# else if (cov > cutoff && lc < tt ) {i=i+1; x="./variantcalling/mapped."i".bed"; print $1"\t"$2"\t"$3 > x; cov=lc;e=0}
-# }'
-
-
 wait
 ####################
 POPS=(` find  ./mapping  -name "*.bam" | sort | cut -d "/" -f3 | cut -d "." -f1 | sort | uniq `)
@@ -508,21 +362,6 @@ fi
 if [ ! -d "./variantcalling/filtered" ]; then
      mkdir ./variantcalling/filtered
 fi
-
-# VT1="--max-missing 0.9"
-# VT2="--mac 2"
-# VT3="--minQ 20"
-# VT4="--minDP 10"
-# #VT5="--min-meanDP 5"
-# #VT6="--max-meanDP 500" 
-
-# VL1=("MQM > 39 & MQMR > 39")
-# VL2=("MQM / MQMR > 0.75 & MQM / MQMR < 1.25")
-# VL3=("RPR > 0 & RPL > 0")
-# VL4=("QUAL / DP > 0.25")
-# VL5=("PAIRED > 0.05 & PAIREDR > 0.05 & PAIREDR / PAIRED < 1.75 & PAIREDR / PAIRED > 0.25 | PAIRED < 0.05 & PAIREDR < 0.05")
-# VL6=("NS > 1")
-# VL7=("LEN < 11")
 
    call_genos(){
     if [ ! -f "./variantcalling/split.$1.bam" ]
@@ -550,7 +389,6 @@ fi
          2> ./variantcalling/logs/fb.$1.error.log | grep -v "#contig" > ./variantcalling/raw/raw.$1.vcf
 
     #vcflib vcffilter -f "QUAL > 10" raw.$1.vcf > qualfil.$1.vcf
-    #add in all filtering here while the vcf is already split up?!
     vcflib vcffilter -f \
        "QUAL > 10 & \
         DP > 10 & \
@@ -571,8 +409,6 @@ fi
         --min-meanDP 3 \
         --recode --recode-INFO-all \
         --stdout > ./variantcalling/filtered/filtered.$1.vcf
-    #grep -v "#contig" ./variantcalling/raw.$1.vcf > ./variantcalling/raw/raw_fixed.$1.vcf
-    #grep -v "#contig" ./variantcalling/filtered.$1.vcf > ./variantcalling/filtered/filtered_fixed.$1.vcf
     }
 
     export -f call_genos
@@ -580,12 +416,6 @@ fi
 ulimit -s unlimited
 ls ./variantcalling/mapped.*.bed | sed 's/mapped.//g' | sed 's/.bed//g' | cut -d "/" -f3 | shuf | parallel --env call_genos -j $NUMPROC --no-notice call_genos {} 
    
-
-
-#mv ./mapping/reference.fasta ./mapping/${PROJ}_reference.fasta
-#mv ./variantcalling/raw*.vcf ./variantcalling/raw/
-#mv ./variantcalling/filtered*.vcf ./variantcalling/filtered/
-
 rename -f -e 's/\d+/sprintf("%02d",$&)/e' -- ./variantcalling/raw/*.vcf
 vcflib vcfcombine ./variantcalling/raw/raw.*.vcf > ./variantcalling/TotalRawSNPs.vcf
 
