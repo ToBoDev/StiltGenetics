@@ -15,29 +15,6 @@ library(here)
 ```
 
 #setup
-
-```{r}
-library(rcartocolor)
-nColor <- 12
-scales::show_col(carto_pal(nColor, "Safe"))
-cols_plot <- carto_pal(nColor, "Safe")
-
-cols_plot <- c("#8dd3c7",
-               "#ffffb3",
-               "#bebada",
-               "#fb8072",
-               "#80b1d3",
-               "#fdb462",
-               "#b3de69",
-               "#fccde5",
-               "#d9d9d9",
-               "#bc80bd",
-               "#ccebc5",
-               "#ffed6f",
-               "black",
-               "blue")
-```
-
 ```{r}
 tree.file <- here("../figures/revisions/spades_fhet_imiss.treesummary")
 #spades.tree <- treeio::read.nexus(tree.file)
@@ -52,13 +29,6 @@ birth.years <- read.csv(here("../figures/revisions/birthyears.csv"))
 tree.metadata <- data.frame("sample.full" = tips, "sample" = as.integer(tips.indv), "seq_run" = tips.seq.run)
 #add tip labels with birth year
 year.metadata <- left_join(tree.metadata, birth.years, by = "sample") %>% mutate(year.born=as.integer(year.born))
-
-(ggtree(spades.tree, layout = "roundrect") +
-  geom_text(aes(label=label, hjust = -0.2)) +
-    geom_text(aes(label=node)))  %<+% year.metadata +
-    geom_tiplab(aes(label = sample), size=4, offset = 0.001, hjust = 0.5)
-
-
 ```
 
 #wrangling
@@ -83,13 +53,54 @@ bFSs <- behaviour_rels %>% filter(relation=="FS")
 
 #Plots
 
-##base tree plot
+## Fig 1 - roundrect trees tree with consensus
+```{r}
+(ggtree(spades.tree, layout = "roundrect") %>% ggtree::rotate(86) %>% 
+    ggtree::rotate(142) %>% ggtree::rotate(95) %>%  ggtree::rotate(119) %>%
+    ggtree::rotate(141)+
+  geom_text(aes(label=label, hjust = -0.2)) +
+    geom_text(aes(label=node))
+ )  %<+% year.metadata +
+    geom_tiplab(aes(label = sample), size=4, offset = 0.001, hjust = 0.5)
+
+f1_tree <- (ggtree(spades.tree, layout = "roundrect") %>% ggtree::rotate(86) %>% 
+    ggtree::rotate(142) %>% ggtree::rotate(95) %>%  ggtree::rotate(119) %>%
+    ggtree::rotate(141) %>% ggtree::rotate(113) %>% ggtree::rotate(92))  %<+% year.metadata +
+    geom_tiplab(aes(label = paste0(sample, sex)), size=4, offset = 0.0001, hjust = 0)
+
+off1 <- 0.00125
+off2 <- 0.00035
+consensus_highlight_tree <- (ggtree(spades.tree, layout = "roundrect", xlim = c(NA,6)) %>% ggtree::rotate(86) %>% 
+    ggtree::rotate(142) %>% ggtree::rotate(95) %>%  ggtree::rotate(119) %>%
+    ggtree::rotate(141) %>% ggtree::rotate(113) %>% ggtree::rotate(92))  %<+% year.metadata +
+    geom_tiplab(aes(label = paste0(sample, sex)), size=4, offset = 0.0001, hjust = 0) + 
+  geom_strip("manu_62", "manu_59", label = "FS(59_62)", color = "#44AA99", offset = off1, barsize = 2, offset.text = off2)  +
+  geom_strip("STILT_82", "manu_81", label = "FS(81_82)", color = "#44AA99", offset = off1, barsize = 2, offset.text = off2)  +
+  geom_strip("manu_17", "manu_65", label = "PO(17_65)", color = "#D55E00", offset = off1, barsize = 2, offset.text = off2)  +
+  geom_strip("manu_16", "manu_69", label = "HS+(16_69)", color = "#44AA99", offset = off1, barsize = 2, offset.text = off2)  +
+  geom_strip("manu_69", "manu_67", label = "FS(67_69)", color = "#44AA99", offset = off1, barsize = 2, offset.text = off2)  +
+  geom_strip("STILT_86", "manu_87", label = "FS(86_87)", color = "#44AA99", offset = off1, barsize = 2, offset.text = off2)  +
+  geom_highlight(node=62, fill = "#44AA99") +
+  geom_highlight(node=58, fill = "#44AA99") +
+  geom_highlight(node=76, fill = "#44AA99") +
+  geom_highlight(node=31, fill = "#44AA99") +
+  geom_highlight(node=47, fill = "#44AA99") +
+  geom_highlight(node=48, fill = "#D55E00") +
+  geom_highlight(node=64, fill = "#D55E00") +
+  geom_highlight(node=68, fill = "#44AA99") +
+  geom_highlight(node=66, fill = "#44AA99") +
+  geom_highlight(node=32, fill = "#44AA99") +
+  geom_highlight(node=80, fill = "#44AA99") 
+```
+
+
+##base circular tree plot
 
 ```{r}
 inward.circle <- ggtree(spades.tree) %>% 
-    ggtree::rotate(86) %>% 
-    ggtree::rotate(142) %>% 
-    ggtree::rotate(141) + #geom_text(aes(label=node)) +
+   ggtree::rotate(86) %>% 
+    ggtree::rotate(142) %>% ggtree::rotate(95) %>%  ggtree::rotate(119) %>%
+    ggtree::rotate(141) %>% ggtree::rotate(113) %>% ggtree::rotate(92) +
     layout_inward_circular(xlim=.3) 
 
     
@@ -119,23 +130,23 @@ apparent.plot <- inward.circle  %<+% year.metadata +
     scale_shape_manual(values = c(rep(18, nrow(year.metadata)))) +
   
 #triads
-  geom_taxalink(aPOs[1,1], aPOs[1,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aPOs[2,1], aPOs[2,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aPOs[3,1], aPOs[3,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aPOs[4,1], aPOs[4,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aPOs[5,1], aPOs[5,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aPOs[6,1], aPOs[6,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aPOs[7,1], aPOs[7,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aPOs[8,1], aPOs[8,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aPOs[1,1], aPOs[1,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aPOs[2,1], aPOs[2,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aPOs[3,1], aPOs[3,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aPOs[4,1], aPOs[4,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aPOs[5,1], aPOs[5,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aPOs[6,1], aPOs[6,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aPOs[7,1], aPOs[7,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aPOs[8,1], aPOs[8,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   
 #dryads FS  
-  geom_taxalink(aFSs [1,1], aFSs [1,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aFSs [2,1], aFSs [2,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aFSs [3,1], aFSs [3,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aFSs [4,1], aFSs [4,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aFSs [5,1], aFSs [5,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aFSs [6,1], aFSs [6,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aFSs [7,1], aFSs [7,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aFSs [1,1], aFSs [1,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aFSs [2,1], aFSs [2,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aFSs [3,1], aFSs [3,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aFSs [4,1], aFSs [4,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aFSs [5,1], aFSs [5,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aFSs [6,1], aFSs [6,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aFSs [7,1], aFSs [7,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   
 #dryads HS+
   geom_taxalink(aHSs [1,1], aHSs [1,2], color = hs.col, linetype = hs.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
@@ -157,7 +168,7 @@ apparent.plot <- inward.circle  %<+% year.metadata +
   
   guides(size=F, 
          color = guide_legend(title = "Year Born", 
-                                      override.aes = list(size = 5),
+                                      override.aes = list(size = 7),
                                       position = "left"),
          alpha = guide_legend(title = "Relationship",
                               position = "right",
@@ -167,11 +178,13 @@ apparent.plot <- inward.circle  %<+% year.metadata +
                                                   linewidth = c(1,1,1)))) +
   
   theme(plot.margin = unit(c(-1,0,-3,0),"cm"),
-        plot.title = element_text(hjust = 0.5, vjust = -18),
+        plot.title = element_text(hjust = 0.5, vjust = -18, size = 20, face = "bold"),
         plot.background = element_blank(),
         panel.background = element_blank(),
         panel.border = element_blank(),
-        legend.background = element_blank()) +
+        legend.background = element_blank(),
+        legend.title=element_text(size=18), 
+        legend.text=element_text(size=16)) +
   ggtitle("{apparent} Relationships")
 ```
 
@@ -197,54 +210,54 @@ behav.plot <- inward.circle  %<+% year.metadata +
     scale_shape_manual(values = c(rep(18, nrow(year.metadata)))) +
   
 #PO
-  geom_taxalink(bPOs[1,1], bPOs[1,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bPOs[2,1], bPOs[2,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bPOs[3,1], bPOs[3,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bPOs[4,1], bPOs[4,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bPOs[5,1], bPOs[5,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bPOs[6,1], bPOs[6,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bPOs[7,1], bPOs[7,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bPOs[8,1], bPOs[8,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bPOs[9,1], bPOs[9,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bPOs[10,1], bPOs[10,2], color = po.col, linetype = po.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bPOs[1,1], bPOs[1,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bPOs[2,1], bPOs[2,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bPOs[3,1], bPOs[3,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bPOs[4,1], bPOs[4,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bPOs[5,1], bPOs[5,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bPOs[6,1], bPOs[6,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bPOs[7,1], bPOs[7,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bPOs[8,1], bPOs[8,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bPOs[9,1], bPOs[9,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bPOs[10,1], bPOs[10,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
 
 #dryads FS  
-  geom_taxalink(bFSs [1,1], bFSs [1,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [2,1], bFSs [2,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [3,1], bFSs [3,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [4,1], bFSs [4,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [5,1], bFSs [5,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [6,1], bFSs [6,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [7,1], bFSs [7,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [8,1], bFSs [8,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [9,1], bFSs [9,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [10,1], bFSs [10,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [11,1], bFSs [11,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [12,1], bFSs [12,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [13,1], bFSs [13,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [14,1], bFSs [14,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [15,1], bFSs [15,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [16,1], bFSs [16,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [17,1], bFSs [17,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [18,1], bFSs [18,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [19,1], bFSs [19,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [20,1], bFSs [20,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [21,1], bFSs [21,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [22,1], bFSs [22,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [23,1], bFSs [23,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [24,1], bFSs [24,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [25,1], bFSs [25,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [26,1], bFSs [26,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [27,1], bFSs [27,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [28,1], bFSs [28,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [29,1], bFSs [29,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [30,1], bFSs [30,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [31,1], bFSs [31,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [32,1], bFSs [32,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [33,1], bFSs [33,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [34,1], bFSs [34,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [35,1], bFSs [35,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [36,1], bFSs [36,2], color = fs.col, linetype = fs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [1,1], bFSs [1,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [2,1], bFSs [2,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [3,1], bFSs [3,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [4,1], bFSs [4,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [5,1], bFSs [5,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [6,1], bFSs [6,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [7,1], bFSs [7,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [8,1], bFSs [8,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [9,1], bFSs [9,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [10,1], bFSs [10,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [11,1], bFSs [11,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [12,1], bFSs [12,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [13,1], bFSs [13,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [14,1], bFSs [14,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [15,1], bFSs [15,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [16,1], bFSs [16,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [17,1], bFSs [17,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [18,1], bFSs [18,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [19,1], bFSs [19,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [20,1], bFSs [20,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [21,1], bFSs [21,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [22,1], bFSs [22,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [23,1], bFSs [23,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [24,1], bFSs [24,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [25,1], bFSs [25,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [26,1], bFSs [26,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [27,1], bFSs [27,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [28,1], bFSs [28,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [29,1], bFSs [29,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [30,1], bFSs [30,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [31,1], bFSs [31,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [32,1], bFSs [32,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [33,1], bFSs [33,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [34,1], bFSs [34,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [35,1], bFSs [35,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [36,1], bFSs [36,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
 
 #dryads HS+
   geom_taxalink(bHSs [1,1], bHSs [1,2], color = hs.col, linetype = hs.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
@@ -267,7 +280,7 @@ behav.plot <- inward.circle  %<+% year.metadata +
   
   guides(size=F, 
          color = guide_legend(title = "Year Born", 
-                                      override.aes = list(size = 5),
+                                      override.aes = list(size = 7),
                                       position = "left"),
          alpha = guide_legend(title = "Relationship",
                               position = "right",
@@ -277,11 +290,13 @@ behav.plot <- inward.circle  %<+% year.metadata +
                                                   linewidth = c(1,1,1)))) +
   
   theme(plot.margin = unit(c(-1,0,-3,0),"cm"),
-        plot.title = element_text(hjust = 0.5, vjust = -18),
+        plot.title = element_text(hjust = 0.5, vjust = -18, size = 20, face = "bold"),
         plot.background = element_blank(),
         panel.background = element_blank(),
         panel.border = element_blank(),
-        legend.background = element_blank()) +
+        legend.background = element_blank(),
+        legend.title=element_text(size=18), 
+        legend.text=element_text(size=16)) +
   ggtitle("Behavioral Relationships")
 
 ```
@@ -319,7 +334,7 @@ consensus.plot <- inward.circle  %<+% year.metadata +
 
   geom_taxalink(bPOs[1,1], bPOs[1,2], color = po.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bPOs[2,1], bPOs[2,2], color = po.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bPOs[3,1], bPOs[3,2], color = po.col2, alpha = 1, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bPOs[3,1], bPOs[3,2], color = po.col2, alpha = 1, linetype = beh.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bPOs[4,1], bPOs[4,2], color = po.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bPOs[5,1], bPOs[5,2], color = po.col1, alpha = 0.5, linetype = beh.lt, , curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bPOs[6,1], bPOs[6,2], color = po.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
@@ -334,7 +349,7 @@ consensus.plot <- inward.circle  %<+% year.metadata +
   geom_taxalink(aPOs[3,1], aPOs[3,2], color = po.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
   geom_taxalink(aPOs[4,1], aPOs[4,2], color = po.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
   geom_taxalink(aPOs[5,1], aPOs[5,2], color = po.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
-  geom_taxalink(aPOs[6,1], aPOs[6,2], color = po.col2, alpha = 1, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
+  geom_taxalink(aPOs[6,1], aPOs[6,2], color = po.col2, alpha = 1, linetype = app.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
   geom_taxalink(aPOs[7,1], aPOs[7,2], color = po.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
   geom_taxalink(aPOs[8,1], aPOs[8,2], color = po.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
   
@@ -343,7 +358,7 @@ consensus.plot <- inward.circle  %<+% year.metadata +
   geom_taxalink(bHSs [1,1], bHSs [1,2], color = hs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bHSs [2,1], bHSs [2,2], color = hs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bHSs [3,1], bHSs [3,2], color = hs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bHSs [4,1], bHSs [4,2], color = hs.col2, alpha = 1, linetype = hs.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bHSs [4,1], bHSs [4,2], color = hs.col2, alpha = 1, linetype = hs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bHSs [5,1], bHSs [5,2], color = hs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bHSs [6,1], bHSs [6,2], color = hs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bHSs [7,1], bHSs [7,2], color = hs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
@@ -359,7 +374,7 @@ consensus.plot <- inward.circle  %<+% year.metadata +
   geom_taxalink(aHSs [3,1], aHSs [3,2], color = hs.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
   geom_taxalink(aHSs [4,1], aHSs [4,2], color = hs.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
   geom_taxalink(aHSs [5,1], aHSs [5,2], color = hs.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
-  geom_taxalink(aHSs [6,1], aHSs [6,2], color = hs.col2, alpha = 1, linetype = hs.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
+  geom_taxalink(aHSs [6,1], aHSs [6,2], color = hs.col2, alpha = 1, linetype = hs.lt, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
   geom_taxalink(aHSs [7,1], aHSs [7,2], color = hs.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
   geom_taxalink(aHSs [8,1], aHSs [8,2], color = hs.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
 
@@ -376,23 +391,23 @@ consensus.plot <- inward.circle  %<+% year.metadata +
   geom_taxalink(bFSs [8,1], bFSs [8,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [9,1], bFSs [9,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [10,1], bFSs [10,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [11,1], bFSs [11,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [11,1], bFSs [11,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [12,1], bFSs [12,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [13,1], bFSs [13,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [14,1], bFSs [14,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [14,1], bFSs [14,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [15,1], bFSs [15,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [16,1], bFSs [16,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [17,1], bFSs [17,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [18,1], bFSs [18,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [19,1], bFSs [19,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [20,1], bFSs [20,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [21,1], bFSs [21,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [21,1], bFSs [21,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [22,1], bFSs [22,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [23,1], bFSs [23,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [24,1], bFSs [24,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [25,1], bFSs [25,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [26,1], bFSs [26,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(bFSs [27,1], bFSs [27,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(bFSs [27,1], bFSs [27,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [28,1], bFSs [28,2], color = fs.col1, alpha = 0.5, linetype = fs.lt2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [29,1], bFSs [29,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(bFSs [30,1], bFSs [30,2], color = fs.col1, alpha = 0.5, linetype = beh.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
@@ -407,11 +422,11 @@ consensus.plot <- inward.circle  %<+% year.metadata +
   #apparentFSs
   geom_taxalink(aFSs [1,1], aFSs [1,2], color = fs.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(aFSs [2,1], aFSs [2,2], color = fs.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aFSs [3,1], aFSs [3,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aFSs [4,1], aFSs [4,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aFSs [3,1], aFSs [3,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aFSs [4,1], aFSs [4,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(aFSs [5,1], aFSs [5,2], color = fs.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aFSs [6,1], aFSs [6,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aFSs [7,1], aFSs [7,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 1, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aFSs [6,1], aFSs [6,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
+  geom_taxalink(aFSs [7,1], aFSs [7,2], color = fs.col2, alpha = 1, linetype = fs.lt2, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
 
   geom_line(aes(x=0, y=0, alpha = "PO")) +
   geom_line(aes(x=0, y=0, alpha = "FS")) +
@@ -432,29 +447,31 @@ consensus.plot <- inward.circle  %<+% year.metadata +
                                                   linewidth = c(1,1,1,1,1)))) +
   
   theme(plot.margin = unit(c(-1,0,-3,0),"cm"),
-        plot.title = element_text(hjust = 0.5, vjust = -18),
+        plot.title = element_text(hjust = 0.5, vjust = -18, size = 20, face = "bold"),
         plot.background = element_blank(),
         panel.background = element_blank(),
         panel.border = element_blank(),
-        legend.background = element_blank()) +
+        legend.background = element_blank(),
+        legend.title=element_text(size=18), 
+        legend.text=element_text(size=16)) +
   ggtitle("Consensus Relationships")
-
-consensus.plot
 ```
 
 
 #individual/quick
 
 ```{r}
+f1_highlight_tree
 apparent.plot
 behav.plot
-#behav.no.infer.plot
 consensus.plot
 ```
 
 #ggsave
 
 ```{r}
+ggplot2::ggsave(filename = here("../figures/revisions/consensus_tree_revised_may2026.png"), plot = consensus_highlight_tree, dpi = 600, width = 20, height = 12, units = "in")
+ggplot2::ggsave(filename = here("../figures/revisions/f1_tree_revised_may2026.png"), plot = f1_tree, dpi = 600, width = 16, height = 12, units = "in")
 ggplot2::ggsave(filename = here("../figures/revisions/apparent_revised_may2026.png"), plot = apparent.plot, dpi = 600, width = 16, height = 12, units = "in")
 ggplot2::ggsave(filename = here("../figures/revisions/behaviour_revised_may2026.png"), plot = behav.plot, dpi = 600, width = 16, height = 12, units = "in")
 ggplot2::ggsave(filename = here("../figures/revisions/consensus_revised_may2026.png"), plot = consensus.plot, dpi = 600, width = 16, height = 12, units = "in")
