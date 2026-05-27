@@ -453,7 +453,7 @@ vcfout="ref2_20perc_5mmd"
 vcftools --vcf ${vcfin}.vcf --min-meanDP 5 --recode --recode-INFO-all --stdout >  ${vcfout}.vcf
 
 
-#prep sequoia input
+#plink reformatting
 
 vcf_in=spades_20perc_5mmd
 prefix=spades
