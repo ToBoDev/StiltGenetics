@@ -166,15 +166,15 @@ apparent.plot <- inward.circle  %<+% year.metadata +
   scale_alpha_discrete(labels = c("Parent-Offspring",  "Full Sibilings", "Half Sibiling+")) +
   
   guides(size=F, 
-         color = guide_legend(title = "Year Born", 
-                                      override.aes = list(size = 7),
-                                      position = "left"),
          alpha = guide_legend(title = "Relationship",
                               position = "right",
                               override.aes = list(color = c(po.col, fs.col, hs.col),
                                                   alpha = c(1,1,1),
                                                   linetype = c(1,1,6),
-                                                  linewidth = c(2,2,1)))) +
+                                                  linewidth = c(2,2,1))),
+         color = guide_legend(title = "Year Born", 
+                                      override.aes = list(size = 7),
+                                      position = "right")) +
   
   theme(plot.margin = unit(c(-1,0,-3,0),"cm"),
         plot.title = element_text(hjust = 0.5, vjust = -18, size = 20, face = "bold"),
@@ -278,15 +278,15 @@ behav.plot <- inward.circle  %<+% year.metadata +
   scale_alpha_discrete(labels = c("Parent-Offspring",  "Full Sibilings", "Half Sibiling+")) +
   
   guides(size=F, 
-         color = guide_legend(title = "Year Born", 
-                                      override.aes = list(size = 7),
-                                      position = "left"),
          alpha = guide_legend(title = "Relationship",
                               position = "right",
                               override.aes = list(color = c(po.col, fs.col, hs.col),
                                                   alpha = c(1,1,1),
                                                   linetype = c(1,1,6),
-                                                  linewidth = c(2,2,1)))) +
+                                                  linewidth = c(2,2,1))),
+         color = guide_legend(title = "Year Born", 
+                                      override.aes = list(size = 7),
+                                      position = "right")) +
   
   theme(plot.margin = unit(c(-1,0,-3,0),"cm"),
         plot.title = element_text(hjust = 0.5, vjust = -18, size = 20, face = "bold"),
@@ -434,15 +434,15 @@ consensus.plot <- inward.circle  %<+% year.metadata +
   scale_alpha_discrete(labels = c("Parent-Offspring",  "Full Sibilings", "Half Sibiling+", "Behavioural Only", "{apparent} only")) +
   
   guides(size=F, 
-         color = guide_legend(title = "Year Born", 
-                                      override.aes = list(size = 5),
-                                      position = "left"),
          alpha = guide_legend(title = "Relationship",
                               position = "right",
                               override.aes = list(color = c(po.col2, fs.col2, hs.col2, noncon.col, noncon.col),
                                                   alpha = c(1,1,1,1,1),
                                                   linetype = c(1,1,6,6,1),
-                                                  linewidth = c(2,2,1,1,1)))) +
+                                                    linewidth = c(2,2,1,1,1))),
+        color = guide_legend(title = "Year Born", 
+                              override.aes = list(size = 5),
+                              position = "right"),) +
   
   theme(plot.margin = unit(c(-1,0,-3,0),"cm"),
         plot.title = element_text(hjust = 0.5, vjust = -18, size = 20, face = "bold"),
