@@ -137,7 +137,6 @@ apparent.plot <- inward.circle  %<+% year.metadata +
   geom_taxalink(aPOs[5,1], aPOs[5,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(aPOs[6,1], aPOs[6,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   geom_taxalink(aPOs[7,1], aPOs[7,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
-  geom_taxalink(aPOs[8,1], aPOs[8,2], color = po.col, linetype = po.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
   
 #dryads FS  
   geom_taxalink(aFSs [1,1], aFSs [1,2], color = fs.col, linetype = fs.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) +
@@ -175,7 +174,7 @@ apparent.plot <- inward.circle  %<+% year.metadata +
                               override.aes = list(color = c(po.col, fs.col, hs.col),
                                                   alpha = c(1,1,1),
                                                   linetype = c(1,1,6),
-                                                  linewidth = c(1,1,1)))) +
+                                                  linewidth = c(2,2,1)))) +
   
   theme(plot.margin = unit(c(-1,0,-3,0),"cm"),
         plot.title = element_text(hjust = 0.5, vjust = -18, size = 20, face = "bold"),
@@ -287,7 +286,7 @@ behav.plot <- inward.circle  %<+% year.metadata +
                               override.aes = list(color = c(po.col, fs.col, hs.col),
                                                   alpha = c(1,1,1),
                                                   linetype = c(1,1,6),
-                                                  linewidth = c(1,1,1)))) +
+                                                  linewidth = c(2,2,1)))) +
   
   theme(plot.margin = unit(c(-1,0,-3,0),"cm"),
         plot.title = element_text(hjust = 0.5, vjust = -18, size = 20, face = "bold"),
@@ -351,7 +350,6 @@ consensus.plot <- inward.circle  %<+% year.metadata +
   geom_taxalink(aPOs[5,1], aPOs[5,2], color = po.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
   geom_taxalink(aPOs[6,1], aPOs[6,2], color = po.col2, alpha = 1, linetype = app.lt, linewidth = 2, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
   geom_taxalink(aPOs[7,1], aPOs[7,2], color = po.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
-  geom_taxalink(aPOs[8,1], aPOs[8,2], color = po.col1, alpha = 0.5, linetype = app.lt, curvature = curvature.var, offset = offset.var, hratio = hratio) + 
   
 #dryads HS+
 
@@ -444,7 +442,7 @@ consensus.plot <- inward.circle  %<+% year.metadata +
                               override.aes = list(color = c(po.col2, fs.col2, hs.col2, noncon.col, noncon.col),
                                                   alpha = c(1,1,1,1,1),
                                                   linetype = c(1,1,6,6,1),
-                                                  linewidth = c(1,1,1,1,1)))) +
+                                                  linewidth = c(2,2,1,1,1)))) +
   
   theme(plot.margin = unit(c(-1,0,-3,0),"cm"),
         plot.title = element_text(hjust = 0.5, vjust = -18, size = 20, face = "bold"),
