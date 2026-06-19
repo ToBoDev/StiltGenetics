@@ -1,6 +1,4 @@
-##### mapped to spades denovo genome - Evan #####
-
-##### vcf calling with freebayes using GNU parallel, including some basic freebayes filters - Evan #####
+##### mapped to spades denovo genome, vcf calls with freebayes using GNU parallel, including some basic freebayes filters - Evan #####
 
 ##### Light filters - Maddie #####
 
