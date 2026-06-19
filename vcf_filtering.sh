@@ -1,13 +1,13 @@
-##### mapped to spades denovo genome, vcf calls with freebayes using GNU parallel, including some basic freebayes filters - Evan #####
+########## mapped to spades denovo genome, vcf calls with freebayes using GNU parallel, including some basic freebayes filters - Evan #####
 
-##### Light filters - Maddie #####
+########## Light filters - Maddie #####
 
 # Files renamed to TotalRawSNPs.vcf and compressed
 bgzip < TotalRawSNPs.vcf > TotalRawSNPs.vcf.gz && tabix TotalRawSNPs.vcf.gz
 # sample 32 removed (~99% missingness), max alelles 2, max depth 2000, snps only, at least 1 non-ref allele
 bcftools view -s "^manu_32" --max-alleles 2 -i 'MEAN(FORMAT/DP)<=2000' -v snps -c 1 TotalRawSNPs.vcf.gz -Oz -o TotalRawSNPs_91ind_snps_maxmeanDP2000.vcf.gz
 
-##### More filters with assesspool - Evan (in supp table as below) #####
+########## More filters with assesspool - Evan (in supp table as below) #####
 
 # Files renamed to spades_denovo_light_filters.vcf.gz
 vcftools --max-missing 0.5
@@ -25,7 +25,7 @@ QUAL > 20
 TYPE = snp
 AO > 2
 
-##### Finetuning filters - Evan #####
+########## Finetuning filters - Evan #####
 
 # thin to 1000, max missing 0.8, minmeanDP 5
 
@@ -42,7 +42,7 @@ missingness = 0.8 #0-1 with 0 allowing for all missing data at a site and 1 allo
 vcftools --vcf ${vcfin}.vcf --max-missing $missingness --recode --stdout > ${vcfout}.vcf
 vcftools --vcf ${vcfin}.vcf --min-meanDP 5 --recode --stdout >  ${vcfout}.vcf
 
-##### Additional filters - Maddie #####
+########## Additional filters - Maddie #####
 
 bgzip < spades_20perc_5mmd.vcf > spades_20perc_5mmd.vcf.gz && tabix spades_20perc_5mmd.vcf.gz
 # at least 1 homozygous site (remove invariant fully heterozygous sites)
