@@ -10,7 +10,7 @@ bcftools view -s "^manu_32" --max-alleles 2 -i 'MEAN(FORMAT/DP)<=2000' -v snps -
 
 ##### More filters with assesspool - Evan (added to supp table as below) #####
 
-mv TotalRawSNPs_91ind_snps_maxmeanDP2000.vcf.gz ./spades_denovo_light_filters.vcf.gz
+# Files renamed to spades_denovo_light_filters.vcf.gz
 
 vcftools --max-missing 0.5
 --mac 2
