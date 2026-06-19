@@ -4,7 +4,7 @@
 
 ##### Light filters - Maddie #####
 
-# sample 32 removed (~99% missingness), max alelles 2, max depth 2000, snps only, at least 1 non-ref genome
+# sample 32 removed (~99% missingness), max alelles 2, max depth 2000, snps only, at least 1 non-ref allele
 bgzip < TotalRawSNPs.vcf > TotalRawSNPs.vcf.gz && tabix TotalRawSNPs.vcf.gz
 bcftools view -s "^manu_32" --max-alleles 2 -i 'MEAN(FORMAT/DP)<=2000' -v snps -c 1 TotalRawSNPs.vcf.gz -Oz -o TotalRawSNPs_91ind_snps_maxmeanDP2000.vcf.gz
 
