@@ -10,12 +10,10 @@ bcftools view -s "^manu_32" --max-alleles 2 -i 'MEAN(FORMAT/DP)<=2000' -v snps -
 ##### More filters with assesspool - Evan (in supp table as below) #####
 
 # Files renamed to spades_denovo_light_filters.vcf.gz
-
 vcftools --max-missing 0.5
 --mac 2
 --minmeanDP 3
 --maxmeanDP 500
-
 vcflib MQM > 30 MQMR > 30 
 MQM / MQMR > 0.75 & MQM / MQMR < 1.25
 QUAL / DP > 0.25
