@@ -46,9 +46,10 @@ vcftools --vcf ${vcfin}.vcf --min-meanDP 5 --recode --stdout >  ${vcfout}.vcf
 
 ##### Additional filters - Maddie #####
 
-# at least 1 homozygous site (remove invariant fully heterozygous sites), remove alleles with length not equal to 1
 bgzip < spades_20perc_5mmd.vcf > spades_20perc_5mmd.vcf.gz && tabix spades_20perc_5mmd.vcf.gz
+# at least 1 homozygous site (remove invariant fully heterozygous sites)
 bcftools view -g hom spades_20perc_5mmd.vcf.gz -Oz -o spades_20perc_5mmd_noinv.vcf.gz
+# remove alleles with length not equal to 1
 bcftools view spades_20perc_5mmd_noinv.vcf.gz | bcftools filter -e 'strlen(REF)!=1 || strlen(ALT)!=1' -Oz -o spades_20perc_5mmd_noinv_LEN1.vcf.gz
 
 ### Filter for max heterozygosity based on minor allele frequency
