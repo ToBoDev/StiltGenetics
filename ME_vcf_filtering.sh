@@ -99,4 +99,4 @@ vcftools --vcf spades_20perc_5mmd_noinv_LEN1_fhet0.4.recode.vcf --remove samples
 bcftools view -v snps -c 1 -g hom spades_20perc_5mmd_noinv_LEN1_fhet0.4_imiss0.3.recode.vcf -Oz -o spades_20perc_5mmd_noinv_LEN1_fhet0.4_imiss0.3_bcftools.vcf.gz
 vcftools --gzvcf spades_20perc_5mmd_noinv_LEN1_fhet0.4_imiss0.3_bcftools.vcf.gz --max-missing 0.8 --mac 2 --min-meanDP 5 --max-meanDP 500 --out spades_20perc_5mmd_noinv_LEN1_fhet0.4_imiss0.3_bcftools_vcftools
 
-########## final vcf has 6,837 sites #####
+########## filtered vcf has 6,837 sites #####
