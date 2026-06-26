@@ -206,13 +206,6 @@ ls ./variantcalling/mapped.*.bed | sed 's/mapped.//g' | sed 's/.bed//g' | cut -d
 rename -f -e 's/\d+/sprintf("%02d",$&)/e' -- ./variantcalling/raw/*.vcf
 vcflib vcfcombine ./variantcalling/raw/raw.*.vcf > ./variantcalling/TotalRawSNPs.vcf
 
-################################################ Maybe dont need this section as dont think we used this file? #####################################################
-
-#if output is polyploid for non GT calls (ie ././.)
-grep -v "^#" ./variantcalling/TotalRawSNPs.vcf | cut -f 10- | cut -d ':' -f 1 | sort | uniq
-sed 's/\.\/\.\/\./\.\/\./' ./variantcalling/TotalRawSNPs.vcf > ./variantcalling/TotalRawSNPs_fix.vcf
-rm ./variantcalling/TotalRawSNPs.vcf; mv ./variantcalling/TotalRawSNPs_fix.vcf ./variantcalling/${PROJ}_TotalRawSNPs.vcf
-
 ###############################################################################
 #VCF_FILTERING#####-----------------------------------------------------------
 ###############################################################################
@@ -297,25 +290,3 @@ vcftools --vcf spades_20perc_5mmd_noinv_LEN1_fhet0.4.recode.vcf --remove samples
 # Repeat loci filters impacted by removing individuals
 bcftools view -v snps -c 1 -g hom spades_20perc_5mmd_noinv_LEN1_fhet0.4_imiss0.3.recode.vcf -Oz -o spades_20perc_5mmd_noinv_LEN1_fhet0.4_imiss0.3_bcftools.vcf.gz
 vcftools --gzvcf spades_20perc_5mmd_noinv_LEN1_fhet0.4_imiss0.3_bcftools.vcf.gz --max-missing 0.8 --mac 2 --min-meanDP 5 --max-meanDP 500 --out spades_20perc_5mmd_noinv_LEN1_fhet0.4_imiss0.3_bcftools_vcftools
-
-
-
-
-################ #plink reformatting ########### Maybe remove this section as dont think we used these files? ###########################################
-
-vcf_in=spades_20perc_5mmd
-prefix=spades
-plink2 --vcf ${vcf_in}.vcf --allow-extra-chr --out $prefix
-plink --vcf ${vcf_in}.vcf --allow-extra-chr --out $prefix
-
-vcftools --vcf spades_20perc_5mmd.vcf --out ${prefix}_for_plink --plink
-
-plink --file spades_for_plink --recode12 --out ${prefix}_plink_recode
-plink --file spades --recodeA --out ${prefix}_plink_recode
-
-
-vcf_in=ref2_20perc_5mmd
-prefix=ref2
-vcftools --vcf ${vcf_in}.vcf --out ${prefix}_for_plink --plink
-plink --vcf ${vcf_in}.vcf --allow-extra-chr --out $prefix
-plink --file ${prefix}_for_plink --recode 12 --out ${prefix}_plink_recode
