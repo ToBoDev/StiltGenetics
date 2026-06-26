@@ -206,7 +206,7 @@ ls ./variantcalling/mapped.*.bed | sed 's/mapped.//g' | sed 's/.bed//g' | cut -d
 rename -f -e 's/\d+/sprintf("%02d",$&)/e' -- ./variantcalling/raw/*.vcf
 vcflib vcfcombine ./variantcalling/raw/raw.*.vcf > ./variantcalling/TotalRawSNPs.vcf
 
-######
+################################################ Maybe dont need this section as dont think we used this file? #####################################################
 
 #if output is polyploid for non GT calls (ie ././.)
 grep -v "^#" ./variantcalling/TotalRawSNPs.vcf | cut -f 10- | cut -d ':' -f 1 | sort | uniq
@@ -217,6 +217,21 @@ rm ./variantcalling/TotalRawSNPs.vcf; mv ./variantcalling/TotalRawSNPs_fix.vcf .
 #VCF_FILTERING#####-----------------------------------------------------------
 ###############################################################################
 
+bgzip < TotalRawSNPs.vcf > TotalRawSNPs.vcf.gz && tabix TotalRawSNPs.vcf.gz
+# Initial look at individual/sample missingness
+vcftools --gzvcf TotalRawSNPs.vcf.gz --missing-indv --out initial_ind_missingness
+# sample 32 removed (~99% missingness), max alelles 2, max depth 2000, snps only, at least 1 non-ref allele
+bcftools view -s "^manu_32" --max-alleles 2 -i 'MEAN(FORMAT/DP)<=2000' -v snps -c 1 TotalRawSNPs.vcf.gz -Oz -o spades_denovo_light_filters.vcf.gz
+
+vcftools --gzvcf spades_denovo_light_filters.vcf.gz --max-missing 0.5 --mac 2 --minmeanDP 3 --maxmeanDP 500 --recode --stdout filter_spades_denovo_light_filters.vcf
+vcffilter -s -f "MQM > 30 & MQMR > 30" -f "MQM / MQMR > 0.75 & MQM / MQMR < 1.25" -f "QUAL / DP > 0.25" /
+-f "PAIRED > 0.05 & PAIREDR > 0.05 & PAIREDR / PAIRED < 1.75 & PAIREDR / PAIRED > 0.25" -f "NS > 44.5" /
+-f "DP > 30" -f "QUAL > 20" -f "TYPE = snp" -f "AO > 2" filter_spades_denovo_light_filters.vcf > final_filter_spades_denovo_light_filters.vcf
+
+# thinning
+vcftools --vcf final_filter_spades_denovo_light_filters.vcf --thin 1000 --recode --stdout final_filter_spades_denovo_light_filters.vcf
+
+# finetuning --max-missing and --min-meanDP filters
 vcfin="final_filter_spades_denovo_light_filters"
 vcfout="spades_20perc_miss"
 missingness=0.8 #0-1 with 0 allowing for all missing data at a site and 1 allowing for no missing data
@@ -226,10 +241,67 @@ vcfin="spades_20perc_miss"
 vcfout="spades_20perc_5mmd"
 vcftools --vcf ${vcfin}.vcf --min-meanDP 5 --recode --recode-INFO-all --stdout >  ${vcfout}.vcf
 
+# Remove invariant sites and alleles with len > 1
+bgzip < spades_20perc_5mmd.vcf > spades_20perc_5mmd.vcf.gz && tabix spades_20perc_5mmd.vcf.gz
+# require at least 1 homozygous site (remove invariant fully heterozygous sites)
+bcftools view -g hom spades_20perc_5mmd.vcf.gz -Oz -o spades_20perc_5mmd_noinv.vcf.gz
+# remove alleles with length not equal to 1 (no LEN in vcf header)
+bcftools filter -e 'strlen(REF)!=1 || strlen(ALT)!=1' spades_20perc_5mmd_noinv.vcf.gz -Oz -o spades_20perc_5mmd_noinv_LEN1.vcf.gz
+
+
+############### Filter for max heterozygosity based on minor allele frequency################################
+# calculate allele frequencies
+vcftools --gzvcf spades_20perc_5mmd_noinv_LEN1.vcf.gz --freq --out MAF
+# determine the minor allele frequency and print to new file
+awk 'BEGIN {OFS="\t";
+    print "CHROM", "POS", "MAF"}
+NR>1 { split($5,a,":")
+split($6,b,":") 
+if (a[2] < b[2]) {
+maf = a[2]
+} else {
+maf = b[2] }
+print $1, $2, maf }' MAF.frq > MAF.txt
+
+# print ref homozygotes, alt homozygotes and heterozygotes at each loci
+vcftools --gzvcf spades_20perc_5mmd_noinv_LEN1.vcf.gz --hardy --out heterozygosity
+# calculate frequency of observed heterozygosity per locus, from total ref homozygotes, heterozygotes, and alt homozygotes
+awk 'BEGIN {OFS="\t";
+    print "CHROM", "POS", "FHET_OBS"}
+NR>1 { split($3,o,"/")
+fhet_o = o[2]/(o[1]+o[2]+o[3])
+print $1, $2, fhet_o }' heterozygosity.hwe > heterozygosity_fhet_calc.txt
+
+# checked plot in R, set threshold at 0.4
+Rscript << 'EOF'
+MAF<-read.table("MAF.txt", header=T)
+het<-read.table("heterozygosity_fhet_calc.txt", header=T)
+MAF_het<-cbind(MAF,het$FHET_OBS)
+# Get list of loci (by CHROM, POS) with observed heterozygosity < 0.4
+MAF_het_cut<-MAF_het[MAF_het$`het$FHET_OBS`<=0.4,]
+write.table(MAF_het_cut[,c(1,2)],"list_SNPs_het0.4.txt",quote=F, row.names=F, sep="\t") 
+EOF
+
+# retain only the loci with observed heterozygosity < 0.4
+vcftools --gzvcf spades_20perc_5mmd_noinv_LEN1.vcf.gz --positions list_SNPs_het0.4.txt --recode --recode-INFO-all --out spades_20perc_5mmd_noinv_LEN1_fhet0.4
+
+###########################################################################################################
+
+
+# Check for individual missingness
+vcftools --vcf spades_20perc_5mmd_noinv_LEN1_fhet0.4.recode.vcf --missing-indv --out per_ind_missingness
+# Filter at 30%
+cat per_ind_missingness.imiss | awk '$5 > 0.3' | awk '{print $1}' > samples_fmiss0.3_rm.txt
+vcftools --vcf spades_20perc_5mmd_noinv_LEN1_fhet0.4.recode.vcf --remove samples_fmiss0.3_rm.txt --recode --recode-INFO-all --out spades_20perc_5mmd_noinv_LEN1_fhet0.4_imiss0.3
+
+# Repeat loci filters impacted by removing individuals
+bcftools view -v snps -c 1 -g hom spades_20perc_5mmd_noinv_LEN1_fhet0.4_imiss0.3.recode.vcf -Oz -o spades_20perc_5mmd_noinv_LEN1_fhet0.4_imiss0.3_bcftools.vcf.gz
+vcftools --gzvcf spades_20perc_5mmd_noinv_LEN1_fhet0.4_imiss0.3_bcftools.vcf.gz --max-missing 0.8 --mac 2 --min-meanDP 5 --max-meanDP 500 --out spades_20perc_5mmd_noinv_LEN1_fhet0.4_imiss0.3_bcftools_vcftools
 
 
 
-#plink reformatting
+
+################ #plink reformatting ########### Maybe remove this section as dont think we used these files? ###########################################
 
 vcf_in=spades_20perc_5mmd
 prefix=spades
