@@ -221,17 +221,12 @@ vcfin="final_filter_spades_denovo_light_filters"
 vcfout="spades_20perc_miss"
 missingness=0.8 #0-1 with 0 allowing for all missing data at a site and 1 allowing for no missing data
 vcftools --vcf ${vcfin}.vcf --max-missing $missingness --recode --recode-INFO-all --stdout > ${vcfout}.vcf
+
 vcfin="spades_20perc_miss"
 vcfout="spades_20perc_5mmd"
 vcftools --vcf ${vcfin}.vcf --min-meanDP 5 --recode --recode-INFO-all --stdout >  ${vcfout}.vcf
 
-vcfin="final_filter_ref2_hleu_light_filters"
-vcfout="ref2_20perc_miss"
-missingness=0.8 #0-1 with 0 allowing for all missing data at a site and 1 allowing for no missing data
-vcftools --vcf ${vcfin}.vcf --max-missing $missingness --recode --recode-INFO-all --stdout > ${vcfout}.vcf
-vcfin="ref2_20perc_miss"
-vcfout="ref2_20perc_5mmd"
-vcftools --vcf ${vcfin}.vcf --min-meanDP 5 --recode --recode-INFO-all --stdout >  ${vcfout}.vcf
+
 
 
 #plink reformatting
