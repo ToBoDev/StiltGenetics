@@ -216,13 +216,13 @@ vcftools --gzvcf TotalRawSNPs.vcf.gz --missing-indv --out initial_ind_missingnes
 # sample 32 removed (~99% missingness), max alelles 2, max depth 2000, snps only, at least 1 non-ref allele
 bcftools view -s "^manu_32" --max-alleles 2 -i 'MEAN(FORMAT/DP)<=2000' -v snps -c 1 TotalRawSNPs.vcf.gz -Oz -o spades_denovo_light_filters.vcf.gz
 
-vcftools --gzvcf spades_denovo_light_filters.vcf.gz --max-missing 0.5 --mac 2 --minmeanDP 3 --maxmeanDP 500 --recode --stdout filter_spades_denovo_light_filters.vcf
+vcftools --gzvcf spades_denovo_light_filters.vcf.gz --max-missing 0.5 --mac 2 --minmeanDP 3 --maxmeanDP 500 --recode --recode-INFO-all --stdout > tempfilter_spades_denovo_light_filters.vcf
 vcffilter -s -f "MQM > 30 & MQMR > 30" -f "MQM / MQMR > 0.75 & MQM / MQMR < 1.25" -f "QUAL / DP > 0.25" /
 -f "PAIRED > 0.05 & PAIREDR > 0.05 & PAIREDR / PAIRED < 1.75 & PAIREDR / PAIRED > 0.25" -f "NS > 44.5" /
--f "DP > 30" -f "QUAL > 20" -f "TYPE = snp" -f "AO > 2" filter_spades_denovo_light_filters.vcf > final_filter_spades_denovo_light_filters.vcf
+-f "DP > 30" -f "QUAL > 20" -f "TYPE = snp" -f "AO > 2" tempfilter_spades_denovo_light_filters.vcf > filter_spades_denovo_light_filters.vcf
 
 # thinning
-vcftools --vcf final_filter_spades_denovo_light_filters.vcf --thin 1000 --recode --stdout final_filter_spades_denovo_light_filters.vcf
+vcftools --vcf filter_spades_denovo_light_filters.vcf --thin 1000 --recode --recode-INFO-all --stdout > final_filter_spades_denovo_light_filters.vcf
 
 # finetuning --max-missing and --min-meanDP filters
 vcfin="final_filter_spades_denovo_light_filters"
@@ -270,6 +270,7 @@ Rscript << 'EOF'
 MAF<-read.table("MAF.txt", header=T)
 het<-read.table("heterozygosity_fhet_calc.txt", header=T)
 MAF_het<-cbind(MAF,het$FHET_OBS)
+
 # Get list of loci (by CHROM, POS) with observed heterozygosity < 0.4
 MAF_het_cut<-MAF_het[MAF_het$`het$FHET_OBS`<=0.4,]
 write.table(MAF_het_cut[,c(1,2)],"list_SNPs_het0.4.txt",quote=F, row.names=F, sep="\t") 
