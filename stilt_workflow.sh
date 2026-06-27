@@ -206,16 +206,19 @@ ls ./variantcalling/mapped.*.bed | sed 's/mapped.//g' | sed 's/.bed//g' | cut -d
 rename -f -e 's/\d+/sprintf("%02d",$&)/e' -- ./variantcalling/raw/*.vcf
 vcflib vcfcombine ./variantcalling/raw/raw.*.vcf > ./variantcalling/TotalRawSNPs.vcf
 
+
 ###############################################################################
 #VCF_FILTERING#####-----------------------------------------------------------
 ###############################################################################
 
 bgzip < TotalRawSNPs.vcf > TotalRawSNPs.vcf.gz && tabix TotalRawSNPs.vcf.gz
+
 # Initial look at individual/sample missingness
 vcftools --gzvcf TotalRawSNPs.vcf.gz --missing-indv --out initial_ind_missingness
-# sample 32 removed (~99% missingness), max alelles 2, max depth 2000, snps only, at least 1 non-ref allele
+# Basic filters: sample 32 removed (~99% missingness), max alelles 2, max depth 2000, snps only, at least 1 non-ref allele
 bcftools view -s "^manu_32" --max-alleles 2 -i 'MEAN(FORMAT/DP)<=2000' -v snps -c 1 TotalRawSNPs.vcf.gz -Oz -o spades_denovo_light_filters.vcf.gz
 
+# Additional filters
 vcftools --gzvcf spades_denovo_light_filters.vcf.gz --max-missing 0.5 --mac 2 --minmeanDP 3 --maxmeanDP 500 --recode --recode-INFO-all --stdout > tempfilter_spades_denovo_light_filters.vcf
 vcffilter -s -f "MQM > 30 & MQMR > 30" -f "MQM / MQMR > 0.75 & MQM / MQMR < 1.25" -f "QUAL / DP > 0.25" /
 -f "PAIRED > 0.05 & PAIREDR > 0.05 & PAIREDR / PAIRED < 1.75 & PAIREDR / PAIRED > 0.25" -f "NS > 44.5" /
@@ -282,7 +285,7 @@ vcftools --gzvcf spades_20perc_5mmd_noinv_LEN1.vcf.gz --positions list_SNPs_het0
 ###########################################################################################################
 
 
-# Check for individual missingness
+# Check individual missingness
 vcftools --vcf spades_20perc_5mmd_noinv_LEN1_fhet0.4.recode.vcf --missing-indv --out per_ind_missingness
 # Filter at 30%
 cat per_ind_missingness.imiss | awk '$5 > 0.3' | awk '{print $1}' > samples_fmiss0.3_rm.txt
